@@ -1,4 +1,4 @@
 rootProject.name = 'HW'
 
-include 'main'
+include ':main'
 
