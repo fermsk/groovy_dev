@@ -1,0 +1,67 @@
+name: Build and test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        java: [8, 11]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          check-latest: true
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+      - name: Build and test with Gradle
+        run: ./gradlew test
+        timeout-minutes: 60
+        env:
+          GRADLE_SCANS_ACCEPT: yes
+  testWithIndy:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java: [8, 11, 15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          check-latest: true
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+      - name: Build and test with Gradle
+        run: ./gradlew testWithIndy
+        timeout-minutes: 60
+        env:
+          GRADLE_SCANS_ACCEPT: yes
+  testWithJEP396:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java: [16, 17]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          check-latest: true
+          distribution: 'zulu'
+          java-version: |
+            ${{ matrix.java }}
+            11
+      - name: Build and test with Gradle
+        run: ./gradlew -Ptarget.java.home=$JAVA_HOME_${{ matrix.java }}_X64 testWithIndy
+        timeout-minutes: 60
+        env:
+          GRADLE_SCANS_ACCEPT: yes
