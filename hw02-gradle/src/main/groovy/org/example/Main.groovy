@@ -1,45 +1,30 @@
-class ATMExample {
-    static void main(String[] args) {
-        int balance = 100000, cash, deposit
-        Scanner sc = new Scanner(System.in)
-        while (true) {
-            println "ATM emulate"
-            println "Choose 1 to take money"
-            println "Choose 2 to put money"
-            println "Choose 3 to check balance"
-            println "Choose 4 for exit"
-            print "Enter number of operation: "
-
-            int choice = sc.nextInt()
-            switch (choice) {
-                case 1:
-                    print "Input sum you want to get: "
-                    cash = sc.nextInt()
-                    if (balance >= cash) {
-                        balance -= cash
-                        println "Please, take your money"
-                    } else {
-                        println "No enough money on the balance"
-                    }
-                    println ""
-                    break
-
-                case 2:
-                    print "Input sum to put: "
-                    deposit = sc.nextInt()
-                    balance += deposit
-                    println "Sum $deposit inputed succesfully"
-                    println ""
-                    break
-
-                case 3:
-                    println "Balance : $balance"
-                    println ""
-                    break
-
-                case 4:
-                    System.exit(0)
-            }
+def main() {
+    // Create ATM with supported denominations
+    def atm = new ATM([5000, 1000, 500, 100])
+    
+    // Deposit money using operator overloading (<<)
+    atm << [5000:10, 1000:20, 500:10, 100:50]
+    
+    println "Initial state:"
+    println atm
+    println "\nTotal balance: ₽${atm.balance}"
+    
+    try {
+        // Try to withdraw money
+        def withdrawal = atm.withdraw(13700)
+        println "\nWithdrawn amount: ₽13700"
+        println "Used banknotes:"
+        withdrawal.each { denomination, count ->
+            println "₽${denomination}: ${count} notes"
         }
+        
+        println "\nATM state after withdrawal:"
+        println atm
+        
+    } catch (Exception e) {
+        println "\nError: ${e.message}"
     }
 }
+
+// Run the example
+main()
