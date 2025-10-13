@@ -1,4 +1,5 @@
 # how to use the DSL:
+```
 def builder = new XlsxBuilder("test.xlsx").with {
     sheet(idx: 0) {
         row(idx: 0) {
@@ -15,3 +16,4 @@ def builder = new XlsxBuilder("test.xlsx").with {
     }
     build()
 }
+```
