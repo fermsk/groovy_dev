@@ -3,29 +3,26 @@
 import org.apache.poi.xssf.usermodel.*
 import org.apache.poi.ss.usermodel.*
 
-// Include the XlsxBuilder classes
 evaluate(new File('XlsxBuilder.groovy'))
 
-// Test the DSL
 def builder = new XlsxBuilder("test.xlsx")
 
 builder.sheet(idx: 0) {
     row(idx: 0) {
         cell {
             value = 1
-            style = new Style()
+            style = new Style(backgroundColor: IndexedColors.YELLOW.index)
         }
         cell {
             idx = 3
             value = "test"
-            style = new Style()
+            style = new Style(fontColor: IndexedColors.RED.index)
         }
     }
 }
 
 builder.build()
 
-// Verify the generated file
 def workbook = new XSSFWorkbook(new FileInputStream("test.xlsx"))
 def sheet = workbook.getSheetAt(0)
 def row = sheet.getRow(0)
@@ -40,3 +37,4 @@ workbook.close()
 
 println "✅ All tests passed!"
 new File("test-output.txt").text = "Build successful - XLSX file generated correctly"
+ 
