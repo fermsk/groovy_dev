@@ -1,4 +1,4 @@
-@Grab(group='org.apache.poi', module='poi-ooxml', version='5.2.3')
+@Grab(group='org.apache.poi',  module='poi-ooxml', version='5.2.3')
 
 import org.apache.poi.xssf.usermodel.*
 import org.apache.poi.ss.usermodel.*
@@ -53,7 +53,6 @@ class XlsxBuilder {
         def cellIdx = cellConfig.idx ?: currentRow.getLastCellNum() == -1 ? 0 : currentRow.getLastCellNum()
         def cell = currentRow.createCell(cellIdx)
         
-        // Set cell value based on type
         switch (cellConfig.value) {
             case Integer:
             case Long:
@@ -72,8 +71,23 @@ class XlsxBuilder {
     }
     
     private void applyStyle(XSSFCell cell, Style style) {
-       
         def cellStyle = workbook.createCellStyle()
+        
+        if (style.backgroundColor) {
+            cellStyle.setFillForegroundColor(style.backgroundColor)
+            cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND)
+        }
+        
+        if (style.fontColor || style.bold) {
+            def font = workbook.createFont()
+            if (style.fontColor) {
+                font.setColor(style.fontColor)
+            }
+            if (style.bold) {
+                font.setBold(true)
+            }
+            cellStyle.setFont(font)
+        }
         
         cell.setCellStyle(cellStyle)
     }
@@ -96,5 +110,8 @@ class CellConfig {
 }
 
 class Style {
-   
+    IndexedColors backgroundColor
+    IndexedColors fontColor
+    boolean bold = false
 }
+ 
