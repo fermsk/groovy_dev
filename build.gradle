@@ -1,0 +1,24 @@
+plugins  {
+    id 'groovy'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.apache.groovy:groovy:4.0.15'
+    implementation 'org.apache.poi:poi-ooxml:5.2.3'
+    testImplementation 'org.apache.groovy:groovy-test:4.0.15'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+application {
+    mainClass = 'XlsxBuilderTest'
+}
+
+test {
+    useJUnit()
+}
+ 
