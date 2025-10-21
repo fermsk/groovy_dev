@@ -1,4 +1,4 @@
-@Grab(group='org.apache.poi',  module='poi-ooxml', version='5.2.3')
+@Grab(group='org.apache.poi', module='poi-ooxml', version='5.2.3')
 
 import org.apache.poi.xssf.usermodel.*
 import org.apache.poi.ss.usermodel.*
@@ -8,18 +8,18 @@ class XlsxBuilder {
     private String filename
     private XSSFSheet currentSheet
     private XSSFRow currentRow
-    
+
     XlsxBuilder(String filename) {
         this.filename = filename.endsWith('.xlsx') ? filename : "${filename}.xlsx"
         this.workbook = new XSSFWorkbook()
     }
-    
+
     def methodMissing(String name, args) {
         if (name == 'sheet') {
-            return sheet(*args)
+            sheet(*args)
         }
     }
-    
+
     def sheet(Map params = [:], Closure closure) {
         def idx = params.idx ?: 0
         def name = params.name ?: idx.toString()
@@ -27,98 +27,111 @@ class XlsxBuilder {
         currentSheet = workbook.createSheet(name)
         if (closure) {
             closure.delegate = this
-            closure.call()
+            closure.resolveStrategy = Closure.DELEGATE_FIRST
+            closure()
         }
     }
-    
+
     def row(Map params = [:], Closure closure) {
         def idx = params.idx ?: 0
         currentRow = currentSheet.createRow(idx)
         
         if (closure) {
             closure.delegate = this
-            closure.call()
+            closure.resolveStrategy = Closure.DELEGATE_FIRST
+            closure()
         }
     }
-    
+
     def cell(Map params = [:], Closure closure) {
-        def cellConfig = new CellConfig()
+        def cellBuilder = new CellBuilder(currentRow)
         
         if (closure) {
-            closure.delegate = cellConfig
+            closure.delegate = cellBuilder
             closure.resolveStrategy = Closure.DELEGATE_FIRST
-            closure.call()
+            closure()
         }
         
-        def cellIdx = cellConfig.idx ?: (currentRow.getLastCellNum() == -1 ? 0 : currentRow.getLastCellNum())
-        def cell = currentRow.createCell(cellIdx)
-        
-        switch (cellConfig.value) {
-            case Integer:
-            case Long:
-                cell.setCellValue(cellConfig.value as double)
-                break
-            case Boolean:
-                cell.setCellValue(cellConfig.value as boolean)
-                break
-            default:
-                cell.setCellValue(cellConfig.value?.toString())
-        }
-        
-        if (cellConfig.style) {
-            applyStyle(cell, cellConfig.style)
-        }
+        cellBuilder.build()
     }
-    
-    private void applyStyle(XSSFCell cell, Style style) {
-        def cellStyle = workbook.createCellStyle()
-        
-        if (style.backgroundColor) {
-            cellStyle.setFillForegroundColor(style.backgroundColor)
-            cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND)
-        }
-        
-        if (style.fontColor || style.bold) {
-            def font = workbook.createFont()
-            if (style.fontColor) {
-                font.setColor(style.fontColor)
-            }
-            if (style.bold) {
-                font.setBold(true)
-            }
-            cellStyle.setFont(font)
-        }
-        
-        cell.setCellStyle(cellStyle)
-    }
-    
+
     def build() {
-        new FileOutputStream(filename).withCloseable { os ->
-            workbook.write(os)
+        new File(filename).withOutputStream { out ->
+            workbook.write(out)
         }
         workbook.close()
     }
 }
 
-class CellConfig {
-    def idx
-    def value
-    Style style
+class Style {
+    String backgroundColor  // For cell background
+    String fontColor       // For text color
     
-    def propertyMissing(String name, value) {
-        this[name] = value
+    Style(Map params = [:]) {
+        backgroundColor = params.backgroundColor
+        fontColor = params.fontColor
     }
 }
 
-class Style {
-    short backgroundColor
-    short fontColor
-    boolean bold = false
+class CellBuilder {
+    private XSSFRow row
+    Integer idx
+    def value
+    Style style
+
+    CellBuilder(XSSFRow row) {
+        this.row = row
+        this.idx = row.lastCellNum == -1 ? 0 : row.lastCellNum
+    }
+
+    def build() {
+        def cell = row.createCell(idx)
+        
+        switch (value) {
+            case Integer:
+                cell.setCellValue(value as Integer)
+                break
+            case Boolean:
+                cell.setCellValue(value as Boolean)
+                break
+            default:
+                cell.setCellValue(value?.toString())
+        }
+
+        if (style) {
+            applyStyle(cell, style)
+        }
+    }
+
+     private void applyStyle(XSSFCell cell, Style style) {
+        def workbook = row.sheet.workbook
+        def cellStyle = workbook.createCellStyle()
+        
+        // Apply background color if specified
+        if (style.backgroundColor) {
+            // Convert color string to IndexedColors
+            def bgColor = getColorFromString(style.backgroundColor)
+            cellStyle.setFillForegroundColor(bgColor.index)
+            cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND)
+        }
+        
+        // Apply font color if specified
+        if (style.fontColor) {
+            def font = workbook.createFont()
+            def fontColor = getColorFromString(style.fontColor)
+            font.setColor(fontColor.index)
+            cellStyle.setFont(font)
+        }
+        
+        cell.cellStyle = cellStyle
+    }
     
-    Style(Map params = [:]) {
-        params.each { key, value ->
-            this[key] = value
+    private IndexedColors getColorFromString(String colorName) {
+        try {
+            return IndexedColors.valueOf(colorName.toUpperCase())
+        } catch (IllegalArgumentException e) {
+            // Default to black if color not found
+            return IndexedColors.BLACK
         }
     }
 }
- 
