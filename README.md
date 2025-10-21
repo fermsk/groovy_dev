@@ -1,27 +1,24 @@
 # how to use the DSL:
 ```
-def  builder = new XlsxBuilder("styled_example")
-
-builder.sheet(name: "Example") {
-    row(idx: 0) {
-        cell {
-            value = "Header 1"
-            style = new Style(backgroundColor: IndexedColors.YELLOW, bold: true)
-        }
-        cell {
-            value = "Header 2"
-            style = new Style(backgroundColor: IndexedColors.LIGHT_BLUE, fontColor: IndexedColors.WHITE)
-        }
-    }
-    row(idx: 1) {
-        cell { value = "Data 1" }
-        cell { 
-            value = "Important"
-            style = new Style(fontColor: IndexedColors.RED, bold: true)
+def builder = new XlsxBuilder("styled_test.xlsx")
+builder.with {
+    sheet(name: "Styled Sheet") {
+        row(idx: 0) {
+            cell {
+                value = "Red background"
+                style = new Style(backgroundColor: "RED")
+            }
+            cell {
+                value = "Blue text"
+                style = new Style(fontColor: "BLUE")
+            }
+            cell {
+                value = "Red background with green text"
+                style = new Style(backgroundColor: "RED", fontColor: "GREEN")
+            }
         }
     }
+    build()
 }
-
-builder.build()
  
 ```
