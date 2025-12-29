@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: orm-postgres
+    environment:
+      POSTGRES_DB: orm_db
+      POSTGRES_USER: orm_user
+      POSTGRES_PASSWORD: orm_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
