@@ -1,0 +1,53 @@
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: :443
+    transport:
+      respondingTimeouts:
+        readTimeout: 0s   # 0 отключает таймаут на чтение (важно для гигабайтных слоев)
+        idleTimeout: 0s   # Отключает таймаут простоя
+    # Add TCP support for Jenkins agent
+    forwardedHeaders:
+      insecure: true
+  jenkins-agent: 
+    address: :50000
+  nexus-docker:
+    address: :4000
+    transport:
+      respondingTimeouts:
+        readTimeout: 0s  # Отключает таймаут на чтение тела запроса (очень важно)
+        writeTimeout: 0s # Отключает таймаут на отправку ответа
+        idleTimeout: 0s  # Отключает таймаут простоя
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    watch: true
+  file:
+    filename: /etc/traefik/dynamic_conf.yml
+    watch: true
+
+api:
+  insecure: true
+  dashboard: true
+
+log:
+  level: DEBUG
+
+certificatesResolvers:
+  myresolver:
+    acme:
+      email: admin@aladdin.ru
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web

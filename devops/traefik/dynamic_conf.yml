@@ -1,0 +1,31 @@
+tls:
+  certificates:
+    - certFile: /etc/certs/cert.ru.crt
+      keyFile: /etc/certs/key.ru.key
+
+http:
+  routers:
+    jenkins:
+      rule: "Host(`git-srv.local.ru`) && PathPrefix(`/jenkins`)"
+      entryPoints:
+        - websecure
+      service: jenkins
+      tls: {}
+  services:
+    jenkins:
+      loadBalancer:
+        servers:
+          - url: "http://172.20.1.3:8080"
+
+tcp: 
+  routers: 
+    jenkins-agent: 
+      rule: "HostSNI(`*`)"
+      entryPoints: 
+        - jenkins-agent
+      service: jenkins-agent
+  services: 
+    jenkins-agent: 
+      loadBalancer: 
+        servers: 
+          - address: "172.20.1.3:50000"

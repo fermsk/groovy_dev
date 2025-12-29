@@ -1,0 +1,55 @@
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.jenkins-agent.address=:50000 
+      - --providers.file.filename=/etc/traefik/dynamic_conf.yml
+      - --providers.file.watch=true
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+      - "0.0.0.0:50000:50000" # Порт для агентов Jenkins (если не WebSocket)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/etc/certs:ro
+      - ./traefik/dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro
+    networks:
+      devops-network:
+        ipv4_address: 172.20.1.1
+    restart: unless-stopped
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    user: root
+    environment:
+      JAVA_OPTS: "-Djenkins.context.path=/jenkins"
+      JENKINS_OPTS: "--prefix=/jenkins"
+    volumes:
+      - ./jenkins-init:/var/jenkins_home/init.groovy.d
+      - ./jenkins:/var/jenkins_home
+    networks:
+      devops-network:
+        ipv4_address: 172.20.1.3
+    # Порт 8080 пробрасывать наружу не обязательно, если есть Traefik
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jenkins.rule=Host(`git-srv.local.ru`) && PathPrefix(`/jenkins`)
+      - traefik.http.routers.jenkins.entrypoints=websecure
+      - traefik.http.routers.jenkins.tls=true
+      - traefik.http.services.jenkins.loadbalancer.server.port=8080
+    restart: unless-stopped
+
+networks:
+  devops-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+          gateway: 172.20.1.254
