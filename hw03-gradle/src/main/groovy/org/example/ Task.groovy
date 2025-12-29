@@ -1,34 +1,21 @@
-import java.time.LocalDateTime
+import grails.gorm.annotation.Entity
+import org.grails.datastore.gorm.GormEntity
 
-class Task {
+@Entity
+class Task implements GormEntity {
     String name
     LocalDateTime startTime
     LocalDateTime endTime
-    Set<Action> actions = []
+    static hasMany = [actions: Action]
 
-    Task(String name, LocalDateTime startTime, LocalDateTime endTime) {
-        this.name = name
-        this.startTime = startTime
-        this.endTime = endTime
+    static constraints = {
+        name blank: false
+        startTime nullable: false
+        endTime nullable: false
+        actions nullable: true
     }
 
-    boolean addAction(Action action) {
-        // Check if action fits within task time bounds
-        if (action.startTime >= startTime && action.endTime <= endTime) {
-            // Check if action overlaps with existing actions
-            boolean hasOverlap = actions.any { existingAction ->
-                !(action.endTime <= existingAction.startTime ||
-                        action.startTime >= existingAction.endTime)
-            }
-            if (!hasOverlap) {
-                actions.add(action)
-                return true
-            }
-        }
-        return false
-    }
-
-    boolean removeAction(Action action) {
-        actions.remove(action)
+    static mapping = {
+        actions cascade: 'all-delete-orphan'
     }
 }

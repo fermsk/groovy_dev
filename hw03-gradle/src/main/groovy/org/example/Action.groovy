@@ -1,13 +1,21 @@
-class Action {
-    String description
+import grails.gorm.annotation.Entity
+import org.grails.datastore.gorm.GormEntity
+
+@Entity
+class Action implements GormEntity {
+    String name
     LocalDateTime startTime
     LocalDateTime endTime
-    Event event
+    static belongsTo = [task: Task]
 
-    Action(String description, LocalDateTime startTime, LocalDateTime endTime) {
-        this.description = description
-        this.startTime = startTime
-        this.endTime = endTime
-        this.event = new Event("${description} is due", startTime)
+    static constraints = {
+        name blank: false
+        startTime nullable: false
+        endTime nullable: false
+        task nullable: false
+    }
+
+    static mapping = {
+        task cascade: 'none'
     }
 }
