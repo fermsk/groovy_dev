@@ -1,0 +1,81 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_HUB_USER = 'femsk' // Замените на ваш логин
+        DOCKER_CREDS_ID = 'a7bf1f54-c276-4aa4-a625-e18f6dde6994'
+    }
+
+    stages {
+        stage('Initialize') {
+            steps {
+                // Переключение на ветку происходит автоматически в Multibranch Pipeline,
+                // но мы выведем инфо для проверки
+                script {
+                    PrintSysTime("Initialization")
+                }
+            }
+        }
+
+        stage('Parallel Build & Deploy Modules') {
+            parallel {
+                stage('Module A') {
+                    steps {
+                        script {
+                            processModule("module-a")
+                        }
+                    }
+                }
+                stage('Module B') {
+                    steps {
+                        script {
+                            processModule("module-b")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Кастомная функция для обработки модуля
+def processModule(moduleName) {
+    // 1. Вызов кастомной функции PrintSysTime
+    PrintSysTime(moduleName)
+
+    // 2. Сборка и тестирование (Maven как пример)
+    dir(moduleName) {
+        echo "Building and Testing ${moduleName}..."
+        sh "mvn clean package" // Предполагаем использование Maven
+
+        // 3. Создание Docker-образа
+        def imageName = "${DOCKER_HUB_USER}/${moduleName}:${env.BRANCH_NAME}-${env.BUILD_ID}"
+        echo "Creating Docker image: ${imageName}"
+        def customImage = docker.build(imageName)
+
+        // 4. Деплой в Docker Hub
+        docker.withRegistry('index.docker.io', DOCKER_CREDS_ID) {
+            customImage.push()
+            customImage.push('latest')
+        }
+
+        // 5. Вызов функции подсчета файлов
+        countFiles(moduleName)
+    }
+}
+
+// Кастомная функция: Вывод времени и ветки
+def PrintSysTime(context) {
+    def now = new Date().format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone('UTC'))
+    echo "---"
+    echo "Current System Time: ${now}"
+    echo "Context: ${context}"
+    echo "Building on branch: ${env.BRANCH_NAME}"
+    echo "---"
+}
+
+// Кастомная функция: Подсчет файлов в папке модуля
+def countFiles(modulePath) {
+    def fileCount = sh(script: "ls -1 | wc -l", returnStdout: true).trim()
+    echo "Module '${modulePath}' on branch '${env.BRANCH_NAME}' contains ${fileCount} files/directories."
+}
