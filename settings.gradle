@@ -1,2 +1,4 @@
-include 'hw07-gradle'
+rootProject.name = 'homework-5'
+include 'hw05-orm-gradle'
+include 'hw08-example-gradle'
 
