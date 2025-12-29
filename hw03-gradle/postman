@@ -1,0 +1,65 @@
+{
+  "info": {
+    "name": "Grails Todo List API",
+    "_postman_id": "12345678-1234-5678-1234-567812345678",
+    "description": "Коллекция запросов для тестирования API Todo List",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Создать задачу",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/task",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Task\",\n  \"startTime\": \"2024-04-27 10:00:00\",\n  \"endTime\": \"2024-04-27 12:00:00\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Получить задачи по дате",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/task/byDate?dateStr=2024-04-27"
+      }
+    },
+    {
+      "name": "Получить количество задач по дате",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/task/countByDate?dateStr=2024-04-27"
+      }
+    },
+    {
+      "name": "Обновить действия задачи",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/task/{id}/editActions",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"actions\": [\n    {\"message\": \"Action 1\", \"dateTime\": \"2024-04-27 10:30:00\"},\n    {\"message\": \"Action 2\", \"dateTime\": \"2024-04-27 11:00:00\"}\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "Удалить задачу",
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:8080/task/{id}"
+      }
+    }
+  ]
+}
