@@ -2,56 +2,58 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USER = 'femsk' // Замените на ваш логин
+        // Укажите ваш логин на Docker Hub
+        DOCKER_HUB_USER = 'femsk'
         DOCKER_CREDS_ID = 'a7bf1f54-c276-4aa4-a625-e18f6dde6994'
     }
 
     stages {
-        stage('Initialize') {
+        stage('Prepare') {
             steps {
-                // Переключение на ветку происходит автоматически в Multibranch Pipeline,
-                // но мы выведем инфо для проверки
+                // Вывод общей информации перед стартом
                 script {
-                    PrintSysTime("Initialization")
+                    PrintSysTime("Global Start")
+                    // Даем права на выполнение gradle wrapper, если нужно
+                    sh "chmod +x ./gradlew"
                 }
             }
         }
 
         stage('Parallel Build & Deploy Modules') {
             parallel {
-                stage('Module A') {
-                    steps {
-                        script {
-                            processModule("module-a")
-                        }
-                    }
+                stage('HW02') {
+                    steps { script { processModule("hw02-gradle") } }
                 }
-                stage('Module B') {
-                    steps {
-                        script {
-                            processModule("module-b")
-                        }
-                    }
+                stage('HW03') {
+                    steps { script { processModule("hw03-gradle") } }
+                }
+                stage('HW07') {
+                    steps { script { processModule("hw07-gradle") } }
+                }
+                stage('HW08') {
+                    steps { script { processModule("hw08-dsl") } }
                 }
             }
         }
     }
 }
 
-// Кастомная функция для обработки модуля
+// Основная логика обработки модуля
 def processModule(moduleName) {
     // 1. Вызов кастомной функции PrintSysTime
     PrintSysTime(moduleName)
 
-    // 2. Сборка и тестирование (Maven как пример)
-    dir(moduleName) {
-        echo "Building and Testing ${moduleName}..."
-        sh "mvn clean package" // Предполагаем использование Maven
+    // 2. Сборка JAR и Тестирование через Gradle
+    // Используем конструкцию :moduleName:build для сборки конкретного проекта
+    echo "Building module: ${moduleName}"
+    sh "./gradlew :${moduleName}:clean :${moduleName}:build"
 
-        // 3. Создание Docker-образа
-        def imageName = "${DOCKER_HUB_USER}/${moduleName}:${env.BRANCH_NAME}-${env.BUILD_ID}"
-        echo "Creating Docker image: ${imageName}"
-        def customImage = docker.build(imageName)
+    // 3. Создание Docker-образа
+    // Предполагается, что Dockerfile лежит в корне папки модуля
+    def imageName = "${DOCKER_HUB_USER}/${moduleName}:${env.BRANCH_NAME.replace('/', '-')}-${env.BUILD_ID}"
+
+    dir(moduleName) {
+        def customImage = docker.build(imageName, "-f Dockerfile .")
 
         // 4. Деплой в Docker Hub
         docker.withRegistry('index.docker.io', DOCKER_CREDS_ID) {
@@ -59,23 +61,26 @@ def processModule(moduleName) {
             customImage.push('latest')
         }
 
-        // 5. Вызов функции подсчета файлов
+        // 5. Вызов кастомной функции подсчета файлов
         countFiles(moduleName)
     }
 }
 
 // Кастомная функция: Вывод времени и ветки
-def PrintSysTime(context) {
-    def now = new Date().format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone('UTC'))
-    echo "---"
-    echo "Current System Time: ${now}"
-    echo "Context: ${context}"
-    echo "Building on branch: ${env.BRANCH_NAME}"
-    echo "---"
+def PrintSysTime(contextName) {
+    def now = new Date().format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone('Europe/Moscow'))
+    echo """
+    ****************************************************
+    TIME: ${now}
+    BRANCH: ${env.BRANCH_NAME}
+    MODULE/CONTEXT: ${contextName}
+    ****************************************************
+    """
 }
 
 // Кастомная функция: Подсчет файлов в папке модуля
 def countFiles(modulePath) {
-    def fileCount = sh(script: "ls -1 | wc -l", returnStdout: true).trim()
-    echo "Module '${modulePath}' on branch '${env.BRANCH_NAME}' contains ${fileCount} files/directories."
+    // Находимся внутри dir(moduleName), поэтому считаем файлы в текущей папке
+    def fileCount = sh(script: "find . -maxdepth 1 -not -path '*/.*' | wc -l", returnStdout: true).trim()
+    echo "RESULT: Module '${modulePath}' has ${fileCount} visible files/folders in the root."
 }
