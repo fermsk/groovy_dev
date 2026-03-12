@@ -1,0 +1,13 @@
+<table><tr><th colspan="2">Результаты</th></tr>
+{% for file_path in failures_by_file %}
+<tr>
+    <th colspan="2" align="left">{{ file_path }}</th>
+</tr>
+    {% for failure in failures_by_file[file_path] %}
+    <tr>
+        <td><font color="{{ "#FF0000" if failure["caseAttributes"]["checkerSeverity"] in ["Critical", "Major"] else "#000000"}}">{{ failure["caseAttributes"]["checkerSeverity"] }}</font>|{{ failure["caseAttributes"]["checkerReliability"] }} {{ failure.caseName|truncate(60)|e }} (<a href="{{ failure["caseAttributes"]["svaceLink"] }}">Svace</a>)</td>
+        <td style="background-color:#{{failure.statusValue}}">{{ failure.status }}</td>
+    </tr>
+    {% endfor %}
+{% endfor %}
+</table>

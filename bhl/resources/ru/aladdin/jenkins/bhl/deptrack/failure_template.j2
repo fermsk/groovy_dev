@@ -1,0 +1,15 @@
+Проект: <a href="{{failures[0].suiteProperties.dependencytrackProjectLink}}">{{failures[0].suiteProperties.projectName}}</a>
+
+<table>
+{% for file_path in failures_by_file %}
+<tr>
+    <th colspan="2" align="left">{{ file_path }}</th>
+</tr>
+    {% for failure in failures_by_file[file_path] %}
+    <tr>
+        <td>[{{failure.caseAttributes.severity}}] [{{failure.caseAttributes.cvssBaseScore}}] {{ failure.caseName }} <a href="{{ failure.caseAttributes.dependencytrackVulnerabilityLink }}">(Vulnerability info)</a></td>
+        <td style="background-color:#{{failure.statusValue}}">{{ failure.status }}</td>
+    </tr>
+    {% endfor %}
+{% endfor %}
+</table>

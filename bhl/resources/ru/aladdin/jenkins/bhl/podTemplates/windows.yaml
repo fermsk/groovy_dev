@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: build
+    image:
+    command:
+    - powershell
+    args:
+    - Start-Sleep
+    - 999999
+    imagePullPolicy: Always
+  - name: jnlp
+    image: vmrm.aladdin.ru:4000/devops/build-images/jenkins-base-build-image:servercore-2004
+    args:
+    - '-url'
+    - 'http://git-srv.aladdin.ru/jenkins/'
+    - '$(JENKINS_SECRET)'
+    - '$(JENKINS_AGENT_NAME)'
+    env:
+    - name: NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+  workingDir: C:\jenkins
+  nodeSelector:
+    kubernetes.io/os: windows
+    node.kubernetes.io/windows-build: 10.0.19041
